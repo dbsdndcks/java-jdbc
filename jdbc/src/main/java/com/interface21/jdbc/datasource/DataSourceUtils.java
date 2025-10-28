@@ -10,28 +10,29 @@ import java.sql.SQLException;
 // 4단계 미션에서 사용할 것
 public abstract class DataSourceUtils {
 
-    private DataSourceUtils() {}
+    private DataSourceUtils() {
+    }
 
     public static Connection getConnection(DataSource dataSource) throws CannotGetJdbcConnectionException {
         Connection connection = TransactionSynchronizationManager.getResource(dataSource);
         if (connection != null) {
             return connection;
         }
-
         try {
-            connection = dataSource.getConnection();
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
-            return connection;
+            return dataSource.getConnection();
         } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
+            throw new CannotGetJdbcConnectionException("JDBC 커넥션 연결도중 문제가 발생했습니다.", ex);
         }
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
+        if (TransactionSynchronizationManager.hasResource(dataSource)) {
+            return;
+        }
         try {
             connection.close();
         } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+            throw new CannotGetJdbcConnectionException("JDBC 커넥션을 닫는 중 오류가 발생했습니다.");
         }
     }
 }

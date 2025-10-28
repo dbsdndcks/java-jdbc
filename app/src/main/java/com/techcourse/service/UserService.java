@@ -23,11 +23,9 @@ public class UserService {
     private final UserHistoryDao userHistoryDao;
 
     public UserService() {
-        this(
-                DataSourceConfig.getInstance(),
+        this(DataSourceConfig.getInstance(),
                 new UserDao(DataSourceConfig.getInstance()),
-                new UserHistoryDao(DataSourceConfig.getInstance())
-        );
+                new UserHistoryDao(DataSourceConfig.getInstance()));
     }
 
     public UserService(DataSource dataSource, UserDao userDao, UserHistoryDao userHistoryDao) {

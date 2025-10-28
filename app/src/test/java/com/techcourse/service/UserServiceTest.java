@@ -14,8 +14,6 @@ import com.techcourse.service.service.UserService;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.support.JdbcTransactionManager;
-import org.springframework.transaction.PlatformTransactionManager;
 
 class UserServiceTest {
 
@@ -26,7 +24,8 @@ class UserServiceTest {
     void setUp() {
         this.userDao = new UserDao(DataSourceConfig.getInstance());
         UserHistoryDao userHistoryDao = new UserHistoryDao(DataSourceConfig.getInstance());
-        userService = new AppUserService(userDao, userHistoryDao);
+        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
+        userService = new TxUserService(DataSourceConfig.getInstance(), appUserService);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -49,19 +48,16 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao();
-        // 애플리케이션 서비스
         final var appUserService = new AppUserService(userDao, userHistoryDao);
-        // 트랜잭션 서비스 추상화
-        PlatformTransactionManager transactionManager = new JdbcTransactionManager(DataSourceConfig.getInstance());
-        final var userService = new TxUserService(transactionManager, appUserService);
+        final var txUserService = new TxUserService(DataSourceConfig.getInstance(), appUserService);
 
         final var newPassword = "newPassword";
         final var createdBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createdBy));
+                () -> txUserService.changePassword(1L, newPassword, createdBy));
 
-        final var actual = userService.findById(1L);
+        final var actual = txUserService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }

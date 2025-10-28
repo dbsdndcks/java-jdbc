@@ -37,4 +37,9 @@ public abstract class TransactionSynchronizationManager {
             resources.remove();
         }
     }
+
+    public static boolean hasResource(DataSource key) {
+        Map<DataSource, Connection> dataSourceConnectionMap = resources.get();
+        return dataSourceConnectionMap.containsKey(key);
+    }
 }
